@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ケルト神話と伝承の地</title>
+  <!-- Leaflet CSS (地図操作用) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* 全体デザイン：白、黄色、ベージュを基調 */
+    :root {
+      --bg-color: #FAF8F5; /* ベージュ */
+      --card-bg: #FFFFFF; /* 白 */
+      --primary-color: #E6B800; /* 黄色・ゴールド */
+      --accent-color: #FFF9E6; /* 淡い黄色 */
+      --text-color: #4A4238; /* ダークブラウン（読みやすい文字色） */
+      --border-color: #E6DCCB;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 2px solid var(--primary-color);
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    header h1 {
+      margin: 0;
+      color: #9E7D00;
+      font-size: 1.8rem;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      font-size: 0.9rem;
+      color: #7A7063;
+    }
+
+    #map-container {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      min-height: 400px;
+      background-color: #EBF3F5;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    .instructions {
+      background-color: var(--accent-color);
+      border: 1px solid var(--primary-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    /* モーダルダイアログ */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: var(--bg-color);
+      margin: 5% auto;
+      padding: 25px;
+      border: 2px solid var(--primary-color);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: #000;
+    }
+
+    .tab-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .tab-button {
+      padding: 10px 20px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .tab-button.active {
+      background-color: var(--primary-color);
+      color: #FFF;
+      border-color: var(--primary-color);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .entity-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--primary-color);
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .entity-card h3 {
+      margin: 0 0 8px 0;
+      color: #8A6D00;
+    }
+
+    .entity-card .location {
+      font-size: 0.85rem;
+      background-color: var(--accent-color);
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      color: #665200;
+    }
+
+    .entity-card p {
+      margin: 5px 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .references {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 40px;
+    }
+
+    .references h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: #8A6D00;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .references ul {
+      padding-left: 20px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 600px) {
+      #map-container {
+        height: 50vh;
+      }
+      .modal-content {
+        margin: 10% auto;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>ケルト神話・伝承マップ</h1>
+    <p>アイルランド・ウェールズ・スコットランド・コンウォール＆ブルターニュの神々と怪物たち</p>
+  </header>
+
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
+
+  <div class="container">
+    <div class="instructions">
+      💡 <strong>操作方法:</strong> 地図をドラッグやスクロール（ズーム）して移動できます。<br>
+      各地域のマーカー（ピン）をタップ／クリックすると、伝承される神様（10柱）と化け物（10体）の詳細をご覧いただけます。
+    </div>
+
+    <!-- 参考文献一覧 -->
+    <div class="references">
+      <h2>参考文献・資料出所</h2>
+      <h3>書籍</h3>
+      <ul>
+        <li>井村君江、『ケルト神話』、筑摩書房、1990年3月25日、2026年9月24日参照</li>
+        <li>木村正俊、『ケルト神話・伝説集』、東京書籍、2021年11月10日、2026年9月24日参照</li>
+      </ul>
+      <h3>ウェブサイト</h3>
+      <ul>
+        <li>鶴岡真弓、「ケルト神話」、日本大百科全書(ニッポニカ)、小学館・Kotobank、2021年4月1日公開、<a href="https://kotobank.jp/word/%E3%82%B1%E3%83%AB%E3%83%88%E7%A5%9E%E8%A9%B1-58327" target="_blank" rel="noopener">https://kotobank.jp/word/ケルト神話-58327</a>、2026年9月24日参照</li>
+      </ul>
+      <h3>画像素材・ライセンス</h3>
+      <ul>
+        <li>地図タイル: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors</li>
+        <li>イラスト・画像掲載時参照先: <a href="https://ja.pngtree.com/free-png-vectors/%E3%82%B1%E3%83%AB%E3%83%88%E7%A5%9E%E8%A9%B1" target="_blank" rel="noopener">Pngtree ケルト神話フリー素材</a> / <a href="https://www.abysse.co.jp/maps/europe/ireland/" target="_blank" rel="noopener">Abysse アイルランドのフリー素材地図</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 詳細表示モーダル -->
+  <div id="detail-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal()">&times;</span>
+      <h2 id="modal-title" style="color: #8A6D00; margin-top: 0;"></h2>
+      
+      <div class="tab-container">
+        <button class="tab-button active" onclick="switchTab('gods')">神様 (10柱)</button>
+        <button class="tab-button" onclick="switchTab('monsters')">化け物 (10体)</button>
+      </div>
+
+      <div id="gods-tab" class="tab-content active"></div>
+      <div id="monsters-tab" class="tab-content"></div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS (地図操作用) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // データ定義
+    const celticData = {
+      ireland: {
+        title: "アイルランド（ダーナ神族とフォモール族の伝承地）",
+        coords: [53.4129, -8.2439],
+        gods: [
+          { name: "ルー", loc: "アイルランド（タラ）", content: "太陽、光、芸術、あらゆる技能を完璧に修めたダーナ神族の若き最高神。魔槍タスラムを持つ。", origin: "ダーナ神族のキアンと、フォモール族の魔眼の王バロルの娘エスニの間で生まれた混血の神。" },
+          { name: "ダグザ", loc: "アイルランド（ブルー・ナ・ボーニャ）", content: "大地の豊穣、魔法、生命を司るダーナ神族の父なる神。打ち出の小槌のような棍棒と大釜を持つ。", origin: "大地の女神ダヌの血族（原初の神格）として誕生した。" },
+          { name: "モリガン", loc: "アイルランド（マグ・トゥレド）", content: "戦争、死、預言、勝利を象徴する女神。カラスの姿で戦場を舞い、兵士たちに狂乱をもたらす。", origin: "デルベスとエルヌワの間に三体一対の女神の一柱として生まれた。" },
+          { name: "ヌアザ", loc: "アイルランド（アラン諸島・タラ）", content: "ダーナ神族の元・最高王。「銀の腕」を持つ正義と王権の神。", origin: "大地の女神ダヌの系統から生まれた。" },
+          { name: "ブリギッド", loc: "アイルランド（キルデア）", content: "詩、医術、鍛冶、春を司る知識と治癒の女神。", origin: "父神ダグザの娘として生まれた。" },
+          { name: "オグマ", loc: "アイルランド", content: "文字（オガム文字）を発明した言語、弁舌、腕力の神。", origin: "ダグザとエルヌワ（またはエーディン）の間に生まれた。" },
+          { name: "マナナン・マクレール", loc: "アイルランドおよびマン島", content: "海、天候、異界（ティル・ナ・ノーグ）を守護する海神。魔法の外套と宝剣を持つ。", origin: "原初の海神レアの息子として生まれた。" },
+          { name: "ミディール", loc: "アイルランド（ブリ・レー）", content: "妖精郷（シー）を治める愛と知恵の神。美しきエーディンとの悲恋で知られる。", origin: "ダグザの息子として生まれた。" },
+          { name: "ゴヴニュ", loc: "アイルランド", content: "鍛冶と金属加工を司る神。決して折れず標的を外さない魔法の武器を作り出す。", origin: "女神ダヌの三職神の一柱として生まれた。" },
+          { name: "アングス・オグ", loc: "アイルランド（ニューグレンジ）", content: "若さ、愛、夢を司る美しい男神。頭上を4羽の鳥が舞っているとされる。", origin: "ダグザと河神ボアンの間に密かに生まれた。" }
+        ],
+        monsters: [
+          { name: "バロル", loc: "アイルランド（トリー島）", content: "目を開くだけで見たものを絶命させる毒の魔眼を持ったフォモール族（魔族）の王。", origin: "原初の闇の種族フォモール族の血統から誕生した。" },
+          { name: "バンシー", loc: "アイルランド全域", content: "特定の古い家系に死が近づくと、夜間に不吉な泣き声をあげて死を予告する女性の妖精・幽鬼。", origin: "無念の死を遂げた先祖の女性の霊が妖精化したとされる。" },
+          { name: "プーカ", loc: "アイルランドの農村や山間部", content: "黒い馬や山羊の姿で現れ、夜道で旅人を背中に乗せて暴走する悪戯好きな変身怪物。", origin: "荒野の自然霊や土地の精霊から発生した。" },
+          { name: "デュラハン", loc: "アイルランド（カウンティ・クレア等）", content: "自らの首を手で抱え、コウモリの羽を持つ馬車に乗って死者の魂を狩りに来る首なし騎士。", origin: "ケルトの古い首狩り信仰と死神の神話が融合して生じた。" },
+          { name: "キャス・パルーグ", loc: "アイルランドからウエールズへ伝播", content: "巨大で凶暴な黒猫の怪物。人間を襲い喰らう。", origin: "神聖な雌豚ヘンウェンが生み落とした悪の種子の一つ。" },
+          { name: "クロー・クルワッハ", loc: "アイルランド（キャヴァン県モイトゥラ）", content: "金と銀で飾られた偶像に宿る、人贄を要求した暗黒の蛇神・怪物。", origin: "聖パトリックが打倒する以前の古く凄惨な自然神が怪物化したもの。" },
+          { name: "フォモール族の巨獣", loc: "アイルランド沿岸の海", content: "片手片足、あるいは獣の頭を持つ異形の巨獣群。", origin: "混沌の海と闇から生まれ出でた不完全な原初生物。" },
+          { name: "エルク", loc: "アイルランドの沼地", content: "底なし沼に棲み、巨大な角で船や人を刺し殺す凶暴な角獣。", origin: "大地の魔力と古生物の骨のイメージから生まれた。" },
+          { name: "アルプ・ルーア", loc: "アイルランドの川辺", content: "川辺で眠る人間の口から体内へ侵入し、その人物が食べた栄養をすべて喰らい尽くす小悪魔。", origin: "寄生的な怨念から発生した精霊。" },
+          { name: "アヴァンク", loc: "アイルランドの湖", content: "湖に潜み、溢れ出る水で村々を洪水に陥れるワニやビーバーに似た水怪。", origin: "深い湖底の泥から生じた巨大な水魔。" }
+        ]
+      },
+      wales: {
+        title: "ウェールズ（マビノギオン伝承地）",
+        coords: [52.1307, -3.7837],
+        gods: [
+          { name: "プウィル", loc: "ウェールズ（ダヴェド）", content: "ダヴェドの首長であり、冥界（アンヌヴン）の王アラウンと交友を結び神格化された英雄。", origin: "ダヴェド統治者の血族として生まれた。" },
+          { name: "リアノン", loc: "ウェールズ（ダヴェド）", content: "馬と歌と生者を癒やす美しき鳥を伴う、大地の女神の系譜を引く存在。", origin: "異界の王ヘヴェイズ・ヘンの娘として生まれた。" },
+          { name: "アラウン", loc: "ウェールズ（アンヌヴン＝冥界）", content: "冥界アンヌヴンを治める影の王。猟犬（クー・シーに似たアンヌヴンの犬）を率いる。", origin: "異界の原初生命として生まれた。" },
+          { name: "ブラノウェン", loc: "ウェールズ（ハルレヒ）", content: "愛と美を象徴する女神。愛する夫との悲劇に耐えた涙の神格。", origin: "リールとペナルドゥンの間に生まれた。" },
+          { name: "ベンディゲイドフラン", loc: "ウェールズ", content: "海を徒歩で渡れるほどの超巨大な神格王。死後もその生首は預言を話し続けた。", origin: "海神リールとペナルドゥンの間に生まれた。" },
+          { name: "マナウィダン", loc: "ウェールズ", content: "魔法と農業、職人技に通じる知恵豊かな神。", origin: "海神リールの息子として生まれた。" },
+          { name: "スール・グウェス", loc: "ウェールズ（バース）", content: "温泉と治癒を司る古代ケルトの女神。", origin: "温泉が湧き出る聖なる大地の命から誕生した。" },
+          { name: "マトンウィの息子アス", loc: "ウェールズ（グウィネズ）", content: "足頭台（足を処女の膝に置く）が必要な強大な魔術師であり王。", origin: "古の魔導神の血統として生まれた。" },
+          { name: "ヒウェル・ダ", loc: "ウェールズ全域", content: "ウェールズの法と秩序を確立した守護神格。", origin: "実在の王が神話化・伝承化された存在。" },
+          { name: "ケルドウェン", loc: "ウェールズ（テギド湖）", content: "霊感と変身、魔法の薬を煮詰める大釜を持つ魔女・詩の女神。", origin: "古の魔導の化身として誕生した。" }
+        ],
+        monsters: [
+          { name: "ワイバーン", loc: "ウェールズの山岳地帯", content: "2本の足と毒の針を持つ尾、鋭い羽を備えた凶暴な竜。", origin: "古代の蛇が歳月を経て翼を得て変化したとされる。" },
+          { name: "アファルク（アヴァンク）", loc: "ウェールズ（スノウドニアのナント・フランコン）", content: "大洪水を引き起こす湖の巨大な水怪。生贄の少女の膝の上で眠る習性がある。", origin: "山奥の暗い湖沼の底で自然発生した。" },
+          { name: "カブレカン", loc: "ウェールズの森", content: "吐き出す毒気によって一帯の作物を枯らし、家畜を死滅させる毒竜。", origin: "暗黒の魔法陣の失敗から漏れ出た毒から生まれた。" },
+          { name: "クーン・アンヌヴン", loc: "ウェールズの空と山々", content: "純白の体に赤い耳を持つ、死者の魂を狩る冥界の猟犬。", origin: "冥界王アラウンの魔術によって育成された。" },
+          { name: "ヘンウェンの落とし子", loc: "ウェールズ（モーヴァン）", content: "聖なる雌豚ヘンウェンが産み落とした、キャス・パルーグを含む様々な怪物たち。", origin: "雌豚ヘンウェンが世界の調和を崩す異物を生み出した。" },
+          { name: "グウィン・アップ・ニーズの魔馬", loc: "ウェールズの霊峰", content: "夜空を駆け抜け、触れたものを凍りつかせる悪霊のような馬。", origin: "異界の王グウィンの影から生み出された。" },
+          { name: "モーヴァンの異形", loc: "ウェールズ（テギド湖畔）", content: "非常に醜く、毛深く黒い皮膚を持ち、戦場の人々を恐怖させる怪物のような男。", origin: "女神ケルドウェンとテギドの間に生まれた。" },
+          { name: "カーディフの巨大グール", loc: "ウェールズ（カーディフ周辺）", content: "墓地を掘り起こし死体を貪る人型怪物。", origin: "呪われた人間の魂が変貌したもの。" },
+          { name: "スノウドニアの巨岩怪物", loc: "ウェールズ（スノウドニア山脈）", content: "岩石と土でできており、登山者を崖から突き落とす動く岩石怪物。", origin: "山脈の荒々しい精霊が具現化した。" },
+          { name: "ディナス・エムリスの赤き竜と白き竜", loc: "ウェールズ（ディナス・エムリス）", content: "地下で戦い続け、上の城砦を崩壊させていた2頭の強大なドラゴン。", origin: "古代の予言と大地のエネルギーから現れた。" }
+        ]
+      },
+      scotland: {
+        title: "スコットランド（ハイランド地方の伝承地）",
+        coords: [57.4778, -4.2247],
+        gods: [
+          { name: "カハッハ（カレハ・ヴェーラ）", loc: "スコットランド（ベン・ネヴィス山等）", content: "冬、嵐、老齢を司る青い顔の青銅の杖を持つ青い老婆の神。", origin: "大地の原初の凍てつく寒さから誕生した。" },
+          { name: "ブライド", loc: "スコットランド全域", content: "春、光、乙女を司る女神。カハッハと交代して春をもたらす。", origin: "冬の終わりとともに春の訪れから再生・誕生する。" },
+          { name: "シーオラ", loc: "スコットランド沿岸", content: "波と潮の満ち引きを司る穏やかな海の女神。", origin: "スコットランドの北海の澄んだ水から現れた。" },
+          { name: "ショニ", loc: "スコットランド（ルイス島）", content: "海に麦酒を捧げることで豊漁と海藻をもたらすとされた水の神。", origin: "島民の祈りと海の自然現象が融合して神格化した。" },
+          { name: "ドナルド・フリエル", loc: "スコットランド（ハイランド）", content: "山々と狩猟を守護する精霊神。", origin: "ハイランドの山脈の息吹から生まれた。" },
+          { name: "オルウェン", loc: "スコットランドとウェールズ境界", content: "足跡から白い花が咲く、太陽と春の生命力を象徴する美しい女神。", origin: "巨人イズバザデンの娘として生まれた。" },
+          { name: "イモゲン", loc: "スコットランド（アーガイル）", content: "川と渓谷を静め、旅人を守る水の女神。", origin: "清らかな清流から自然発生した。" },
+          { name: "アルピンの守護神", loc: "スコットランド（アルバ王国旧領）", content: "古代スコット人の王家を守護する戦争と団結の神。", origin: "部族の守護霊が集積して神格化した。" },
+          { name: "ネヴィス", loc: "スコットランド（ベン・ネヴィス周辺）", content: "最高峰ベン・ネヴィス山に宿る大気の神。", origin: "高い山峰に吹き荒れる風から生まれた。" },
+          { name: "モラグ", loc: "スコットランド（モラー湖）", content: "湖の清らかさと生命を維持する守護神。", origin: "古の澄んだ水から発生した。" }
+        ],
+        monsters: [
+          { name: "ケルピー", loc: "スコットランドの川や川辺", content: "濡れた馬の姿で現れ、乗った者をそのまま水中に引きずり込んで喰らう水魔。", origin: "川の急流や溺死事故の恐怖から生まれた。" },
+          { name: "ナハラヴィー", loc: "スコットランド（オークニー諸島）", content: "皮膚がなく赤い筋肉と黄色い血が剥き出しの、馬と人間が融合した最凶の海魔。", origin: "海の腐敗と熱病の猛威から生まれた。" },
+          { name: "ブルー・メン", loc: "スコットランド（ミンチ海峡）", content: "青い肌を持ち、船乗りに対して詩の難問を投げかけ、答えられないと船を沈める集団怪物。", origin: "嵐の海峡の荒波が化身したもの。" },
+          { name: "シーキー", loc: "スコットランド（シェトランド諸島）", content: "海藻を纏った馬の姿をし、人を溺れさせる凶暴な怪物。", origin: "北海の冷たい波から生まれた。" },
+          { name: "バイコーン", loc: "スコットランドの伝承地", content: "善良な夫を食べて丸々太ると言われる凶暴な二本角の獣。", origin: "人々の風刺と悪意から生み出された。" },
+          { name: "カーバンクル", loc: "スコットランドの怪しい洞窟", content: "額に真っ赤に輝く宝石を持ち、光で人を惑わす怪獣。", origin: "鉱山や地下脈の霊気が凝集して生まれた。" },
+          { name: "フェザック", loc: "スコットランドの湿原", content: "鳥の頭と人間の体を持つ、深夜の湿地で奇声を上げる怪鳥人。", origin: "湿原の不気味な夜の響きから発生した。" },
+          { name: "ギリー・デュ", loc: "スコットランド（ゲールロッホの森）", content: "苔や木の葉を身に纏い、森に迷い込んだ人間を威嚇する黒髪の不気味な森の怪物。", origin: "古代の密林の闇から生まれた。" },
+          { name: "ボーハン", loc: "スコットランドの山地", content: "姿を持たず、激しい嵐とともに現れて旅人の肉を削ぎ落とす不吉な怪異。", origin: "吹き荒れる山嵐そのものが怪異化した。" },
+          { name: "ネシー", loc: "スコットランド（ネス湖）", content: "アダムナンの聖人伝にも記録された、水中から現れて人間を襲う巨大怪獣。", origin: "古くから湖底に封印されていた太古の水魔。" }
+        ]
+      },
+      brittany: {
+        title: "コンウォール・ブルターニュ（大陸および西南ケルト地帯）",
+        coords: [48.2020, -2.9326],
+        gods: [
+          { name: "ケルヌンノス", loc: "コンウォールおよびブルターニュ（古代ガリア地帯）", content: "牡鹿の角を生やし、蛇と金輪を持つ豊穣・野生動物・冥界の神。", origin: "太古の自然と野生動物の命から生み出された。" },
+          { name: "エポナ", loc: "ブルターニュおよびガリア全域", content: "馬、生育、果実を守護する女神。ローマ世界でも広く崇拝された。", origin: "馬と大地の生命力が結びついて誕生した。" },
+          { name: "タラニス", loc: "ブルターニュ／ガリア", content: "車輪を掲げ、雷撃を放つ天候と車輪の神。", origin: "天空の雷鳴から生み出された。" },
+          { name: "エスス", loc: "ブルターニュ／ガリア", content: "樹木を伐採する姿で描かれる、植物の生長と人贄を司る厳格な神。", origin: "森の生命力から生み出された。" },
+          { name: "テウタテス", loc: "ブルターニュ／ガリア", content: "部族の団結、戦争、安全を守護する父親的力を持つ神。", origin: "部族の存続と誓いから誕生した。" },
+          { name: "ベレヌス", loc: "コンウォール／ブルターニュ", content: "光、太陽、治癒の温泉を司る眩い神。", origin: "太陽の眩い光輪から生まれた。" },
+          { name: "ダノナ（ドヌ）", loc: "コンウォール／ブルターニュ", content: "川と母性を象徴する古代の神なる母。", origin: "大地の湧き水から誕生した。" },
+          { name: "メドゥリナ", loc: "コンウォール", content: "蜂蜜酒（ミード）と狂喜、饗宴を司る女神。", origin: "甘美な果実と蜂蜜の醗酵から生まれた。" },
+          { name: "グラノス", loc: "ブルターニュ", content: "熱湯と鉱泉、病気平癒を司る太陽と温泉の神。", origin: "地中から沸き立つ鉱泉から生じた。" },
+          { name: "モルゲン", loc: "コンウォール（アヴァロン）", content: "アヴァロン島を統治する変身術と治癒に長けた九姉妹の長たる女神。", origin: "異界の島アヴァロンの神聖な泉から生まれた。" }
+        ],
+        monsters: [
+          { name: "ブッカ", loc: "コンウォール沿岸", content: "鉱山や海岸に生息し、漁師に魚を求めて暴れる凶暴な水魔。", origin: "荒れ狂う海の脅威から生まれた。" },
+          { name: "アンクー", loc: "ブルターニュ全域", content: "軋む音を立てる馬車に乗り、鎌を持って死者の魂を集めて回る死の影の怪物。", origin: "その年にその地域で最後に死んだ者の魂が変貌して生まれる。" },
+          { name: "コリュガン", loc: "ブルターニュの噴水や泉", content: "美しい髪を持ち、夜間に若者を誘惑して拒絶されると死に至らしめる不気味な水の怪異。", origin: "水辺の妖精が怨念によって堕落したもの。" },
+          { name: "キャプテン・パック", loc: "コンウォール", content: "船乗りを崖に誘い込み船を座礁させる闇の妖獣。", origin: "座礁事故による人々の悲鳴と恐怖から凝集した。" },
+          { name: "ポルパーサー", loc: "コンウォールの古い鉱山", content: "地下深くの鉱脈で怪音を立て、落盤を引き起こす小人の怪物。", origin: "地下の暗闇と土の魔力から自然発生した。" },
+          { name: "ドゥアルガル", loc: "ブルターニュの巨石群（メンヒル）", content: "巨石の陰に隠れ、通りかかる者に呪いをかける邪悪な怪物。", origin: "古代巨石遺構に溜まった霊気から生まれた。" },
+          { name: "ルガル", loc: "ブルターニュの深い森", content: "満月の夜に狼の姿となり人を襲う呪われた人狼。", origin: "神や魔女の呪いによって人間が変貌したもの。" },
+          { name: "ヴェイパー・ドラゴン", loc: "コンウォールの沼地", content: "霧の中から現れ、毒の吐息で旅人を窒息させる巨大蛇。", origin: "沼地から沸き立つ有毒ガスから現れた。" },
+          { name: "ヤン・ギャン・ディオン", loc: "ブルターニュの夜道", content: "巨大な手に5本の燃える指を持ち、夜道をさまよう不気味な巨人。", origin: "迷い子の恐怖と暗闇から具現化した。" },
+          { name: "メリュジーヌ", loc: "ブルターニュ／フランス境界", content: "土曜日に下半身が蛇や魚に変貌する美しくも恐ろしい異形の女性。", origin: "妖精プレスィナと人間との間に生まれた呪われた娘。" }
+        ]
+      }
+    };
+
+    // 地図初期化
+    const map = L.map('map').setView([54.0, -4.5], 6);
+
+    // OpenStreetMapタイル追加
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let currentRegionData = null;
+
+    // マーカーの設置
+    Object.keys(celticData).forEach(key => {
+      const region = celticData[key];
+      const marker = L.marker(region.coords).addTo(map);
+      marker.bindTooltip(region.title, { permanent: false, direction: 'top' });
+      marker.on('click', () => {
+        openModal(region);
+      });
+    });
+
+    // モーダルを開く関数
+    function openModal(region) {
+      currentRegionData = region;
+      document.getElementById('modal-title').innerText = region.title;
+      
+      // 神様データ生成
+      const godsTab = document.getElementById('gods-tab');
+      godsTab.innerHTML = region.gods.map(item => `
+        <div class="entity-card">
+          <h3>${item.name}</h3>
+          <div class="location">📍 ${item.loc}</div>
+          <p><strong>【概要】</strong> ${item.content}</p>
+          <p><strong>【誕生経緯】</strong> ${item.origin}</p>
+        </div>
+      `).join('');
+
+      // 化け物データ生成
+      const monstersTab = document.getElementById('monsters-tab');
+      monstersTab.innerHTML = region.monsters.map(item => `
+        <div class="entity-card">
+          <h3>${item.name}</h3>
+          <div class="location">📍 ${item.loc}</div>
+          <p><strong>【概要】</strong> ${item.content}</p>
+          <p><strong>【誕生経緯】</strong> ${item.origin}</p>
+        </div>
+      `).join('');
+
+      // タブ初期化（神様タブを選択）
+      switchTab('gods');
+      document.getElementById('detail-modal').style.display = 'block';
+    }
+
+    // モーダルを閉じる関数
+    function closeModal() {
+      document.getElementById('detail-modal').style.display = 'none';
+    }
+
+    // タブ切り替え関数
+    function switchTab(type) {
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons[0].classList.toggle('active', type === 'gods');
+      buttons[1].classList.toggle('active', type === 'monsters');
+
+      document.getElementById('gods-tab').classList.toggle('active', type === 'gods');
+      document.getElementById('monsters-tab').classList.toggle('active', type === 'monsters');
+    }
+
+    // モーダル外枠クリックで閉じる
+    window.onclick = function(event) {
+      const modal = document.getElementById('detail-modal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+</html>
